@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution":"NodeNext",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": true,
+    "target": "esnext",
+    "strict": true,
+    "outDir": "./dist",
+    "declaration": true,
+    "types": ["vitest/globals"],
+    "plugins": [ 
+      { 
+        "name": "gql.tada/ts-plugin", 
+        "schema": "https://demo.chaingraph.cash/v1/graphql", 
+        "tadaOutputLocation": "./src/generated/graphql-env.d.ts"
+      } 
+    ] 
+  },
+  "include": [
+    "src"
+  ],
+}

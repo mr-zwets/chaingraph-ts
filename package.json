@@ -1,0 +1,25 @@
+{
+  "name": "chaingraph-ts",
+  "version": "0.1.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "vitest"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@bitauth/libauth": "^3.0.0",
+    "@urql/core": "^5.0.8",
+    "gql.tada": "^1.8.10",
+    "graphql-ws": "^5.16.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "globals": "^15.12.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.6"
+  }
+}
