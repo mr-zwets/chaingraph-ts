@@ -1,4 +1,14 @@
-import { Client, cacheExchange, fetchExchange, subscriptionExchange } from '@urql/core';
+import {
+  Client,
+  cacheExchange,
+  fetchExchange,
+  subscriptionExchange,
+  type AnyVariables,
+  type DocumentInput,
+  type OperationContext,
+  type OperationResult,
+  type OperationResultSource
+} from '@urql/core';
 import { type ClientOptions, createClient as createWSClient } from 'graphql-ws';
 import WebSocket from 'ws'
 import {
@@ -43,13 +53,21 @@ export class ChaingraphClient {
   }
 
   // Expose the query method as a class method
-  query(query: string, variables?: Record<string, any>) {
-    return this.client.query(query, variables);
+  query<Data = any, Variables extends AnyVariables = AnyVariables>(
+    query: DocumentInput<Data, Variables>,
+    variables: Variables,
+    context?: Partial<OperationContext>
+  ): OperationResultSource<OperationResult<Data, Variables>> {
+    return this.client.query(query, variables, context);
   }
 
   // Expose the subscribe method as a class method
-  subscribe(subscription: string, variables?: Record<string, any>) {
-    return this.client.subscription(subscription, variables);
+  subscribe<Data = any, Variables extends AnyVariables = AnyVariables>(
+    query: DocumentInput<Data, Variables>,
+    variables: Variables,
+    context?: Partial<OperationContext>
+  ): OperationResultSource<OperationResult<Data, Variables>> {
+    return this.client.subscription(query, variables, context);
   }
 
   async sendRawTransaction(rawTransactionHex: string){
