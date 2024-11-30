@@ -31,7 +31,7 @@ To test GraphQL queries and explore the schema interactively, visit [try.chaingr
 Install Chaingraph-ts from NPM with:
 
 ```bash
-npm install @mr-zwets/chaingraph-ts
+npm install chaingraph-ts
 ```
 
 ## Example Usage
@@ -39,7 +39,7 @@ npm install @mr-zwets/chaingraph-ts
 Here’s an example of how to use Chaingraph-ts to fetch a raw transaction using the helperFunction:
 
 ```ts
-import { ChaingraphClient } from "@mr-zwets/chaingraph-ts"
+import { ChaingraphClient } from "chaingraph-ts"
 
 // 1. Define your Chaingraph GraphQL URL
 const chaingraphUrl = "https://gql.chaingraph.pat.mn/v1/graphql"
@@ -61,7 +61,7 @@ This example demonstrates how to use a custom query with the `graphql` function.
 The query fetches the AuthHead transaction hash of a token from the blockchain, which is useful for managing token metadata authority.
 
 ```ts
-import { ChaingraphClient, graphql } from "@mr-zwets/chaingraph-ts"
+import { ChaingraphClient, graphql } from "chaingraph-ts"
 
 // 1. Define your Chaingraph GraphQL URL
 const chaingraphUrl = "https://gql.chaingraph.pat.mn/v1/graphql"
@@ -106,7 +106,7 @@ console.log("Auth Head Transaction Hash:", authHeadTxId);
 ## Custom Subscription Example
 
 ```ts
-import { ChaingraphClient, graphql } from "@mr-zwets/chaingraph-ts";
+import { ChaingraphClient, graphql } from "chaingraph-ts";
 
 // 1. Define your Chaingraph GraphQL URL
 const chaingraphUrl = "https://gql.chaingraph.pat.mn/v1/graphql";
