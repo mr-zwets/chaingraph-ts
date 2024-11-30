@@ -1,7 +1,13 @@
 import { Client, cacheExchange, fetchExchange, subscriptionExchange } from '@urql/core';
 import { type ClientOptions, createClient as createWSClient } from 'graphql-ws';
 import WebSocket from 'ws'
-import { getUtxosForAddress, getUtxosForLockingBytecode } from './helperQueries.js';
+import {
+  getLatestBlockheight,
+  getRawTransaction,
+  getUtxosForAddress,
+  getUtxosForLockingBytecode,
+  sendRawTransaction
+} from './chaingraphHelpers.js';
 
 export class chaingraphClient {
   client: Client;
@@ -44,6 +50,20 @@ export class chaingraphClient {
   // Expose the subscribe method as a class method
   subscribe(subscription: string, variables?: Record<string, any>) {
     return this.client.subscription(subscription, variables);
+  }
+
+  async sendRawTransaction(rawTransactionHex: string){
+    return await sendRawTransaction.call(this, rawTransactionHex)
+  }
+  
+  async getRawTransaction(txid: string) {
+    const { encoded_hex } = await getRawTransaction.call(this, txid);
+    return encoded_hex
+  }
+
+  async getBlockHeight(){
+    const { height } = await getLatestBlockheight.call(this);
+    return Number(height);
   }
 
   async getUtxosForAddress(address: string){
