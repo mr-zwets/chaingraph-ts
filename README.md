@@ -134,6 +134,7 @@ const newBlockUnsubscribe = chaingraphClient.subscribe(newBlockSubscription, {})
 });
 
 // 5. Handle new block events
+let blockHeight = 0
 async function handleNewBlock(newBlockHeight: number, timestamp: string) {
   if (newBlockHeight <= blockHeight) return; // Ignore duplicate or older blocks
 

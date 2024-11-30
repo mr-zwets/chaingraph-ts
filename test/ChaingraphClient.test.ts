@@ -30,4 +30,39 @@ describe('test the ChaingraphClient wrapper functions', () => {
 
     expect(authHeadTxId).toEqual(expect.any(String))
   })
+
+  it('should test the subscribe wrapper', async () => {
+    const newBlockSubscription = graphql(`subscription MonitorNewBlocks {
+      block(order_by: { height: desc }, limit: 1) {
+        height
+        timestamp
+      }
+    }`);
+
+    let blockHeight = 0
+    async function waitForFirstSubscription() {
+      return new Promise<void>((resolve, reject) => {
+        chaingraphClient.subscribe(newBlockSubscription, {}).subscribe(async result => {
+          if (result.data?.block?.[0]) {
+            const { height, timestamp } = result.data.block[0];
+            await handleNewBlock(Number(height), timestamp);
+            resolve(); // Resolve the promise when the first result is received
+          } else if (result.error) {
+            console.error("New block subscription error:", result.error);
+            reject(result.error); // Reject the promise if there's an error
+          }
+        });
+      });
+    }
+
+    async function handleNewBlock(newBlockHeight: number, timestamp: string) {
+      if (newBlockHeight <= blockHeight) return; // Ignore duplicate or older blocks
+
+      console.log(`Processing new block at height ${newBlockHeight}, timestamp: ${timestamp}`);
+      blockHeight = newBlockHeight;
+    }
+
+    await waitForFirstSubscription();
+    expect(blockHeight).toEqual(expect.any(Number))
+  })
 })
