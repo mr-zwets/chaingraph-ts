@@ -1,2 +1,2 @@
-export { ChaingraphClient } from './chaingraphClient.js'
+export { ChaingraphClient } from './ChaingraphClient.js'
 export { graphql } from './graphql.js';

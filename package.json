@@ -1,14 +1,15 @@
 {
   "name": "chaingraph-ts",
   "version": "0.1.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
+    "build": "tsc",
     "test": "vitest"
   },
-  "author": "",
+  "author": "mr-zwets",
   "license": "ISC",
-  "description": "",
+  "description": "Chaingraph-ts is a TypeScript library that simplifies using Chaingraph by providing type-safe GraphQL interactions and helper functions.",
   "dependencies": {
     "@bitauth/libauth": "^3.0.0",
     "@urql/core": "^5.0.8",
@@ -19,7 +20,25 @@
   "devDependencies": {
     "@types/ws": "^8.5.13",
     "globals": "^15.12.0",
+    "tsc": "^2.0.4",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mr-zwets/chaingraph-ts.git"
+  },
+  "keywords": [
+    "chaingraph",
+    "bitcoin-cash",
+    "bitcoincash",
+    "cashtokens"
+  ],
+  "bugs": {
+    "url": "https://github.com/mr-zwets/chaingraph-ts/issues"
+  },
+  "homepage": "https://github.com/mr-zwets/chaingraph-ts#readme"
 }
