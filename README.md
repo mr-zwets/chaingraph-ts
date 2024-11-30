@@ -99,7 +99,7 @@ const resultQueryAuthHead = await chaingraphClient.query(queryReqAuthHead, varia
 if (!resultQueryAuthHead.data) {
   throw new Error("No data returned from Chaingraph query");
 }
-const authHeadTxId = resultQueryAuthHead.data.transaction?.[0]?.authchains?.[0].authhead.hash
+const authHeadTxId = resultQueryAuthHead.data.transaction?.[0].authchains?.[0].authhead?.hash
 console.log("Auth Head Transaction Hash:", authHeadTxId);
 ```
 
