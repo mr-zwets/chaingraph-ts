@@ -49,6 +49,8 @@ export class ChaingraphClient {
           },
         }),
       ],
+      // disable urql cache
+      requestPolicy: "network-only"
     });
   }
 
