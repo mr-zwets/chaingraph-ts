@@ -9,7 +9,7 @@ import {
   sendRawTransaction
 } from './chaingraphHelpers.js';
 
-export class chaingraphClient {
+export class ChaingraphClient {
   client: Client;
 
   constructor(

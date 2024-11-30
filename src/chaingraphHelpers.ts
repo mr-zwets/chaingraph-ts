@@ -1,9 +1,9 @@
-import type { chaingraphClient } from "./chaingraphClient.js";
+import type { ChaingraphClient } from "./ChaingraphClient.js";
 import { graphql } from "./graphql.js";
 import { binToHex, cashAddressToLockingBytecode } from "@bitauth/libauth";
 
 export async function getUtxosForAddress(
-  this: chaingraphClient,
+  this: ChaingraphClient,
   address: string
 ) {
   const resultDecodeCashAddress = cashAddressToLockingBytecode(address)
@@ -15,7 +15,7 @@ export async function getUtxosForAddress(
 }
 
 export async function getUtxosForLockingBytecode(
-  this: chaingraphClient,
+  this: ChaingraphClient,
   addressLockingBytecode: string
 ) {
   const query = graphql(`query utxosForLockingBytecode (
@@ -44,7 +44,7 @@ export async function getUtxosForLockingBytecode(
 }
 
 export async function sendRawTransaction(
-  this: chaingraphClient,
+  this: ChaingraphClient,
   rawTransactionHex: string
 ) {
   const sendTransaction = graphql(`mutation sendRawTransaction(
@@ -72,7 +72,7 @@ export async function sendRawTransaction(
 }
 
 export async function getRawTransaction(
-  this: chaingraphClient,
+  this: ChaingraphClient,
   txId: string
 ) {
   const query = graphql(`query rawTranswaction(
@@ -95,7 +95,7 @@ export async function getRawTransaction(
 }
 
 export async function getLatestBlockheight(
-  this: chaingraphClient
+  this: ChaingraphClient
 ) {
   const query = graphql(`query blockWithHighestHeight {
     block(
