@@ -147,3 +147,19 @@ async function handleNewBlock(newBlockHeight: number, timestamp: string) {
 // 6. Unsubscribe when prgram is done (optional)
 // newBlockUnsubscribe.unsubscribe();
 ```
+
+## Build the library
+
+To build the library locally, use:
+
+```bash
+npm run build
+```
+
+## Run the tests
+
+To run the library tests, use:
+
+```bash
+npm run test
+```
