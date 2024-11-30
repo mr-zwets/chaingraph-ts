@@ -87,7 +87,7 @@ export async function getRawTransaction(
     }
   }`);
   const variables = {
-    txId
+    txId: `\\x${txId}`
   }
   const queryResult = (await this.client.query(query, variables)).data
   if (!queryResult) throw new Error('Error in ChainGraph query GetTransactionHex');
