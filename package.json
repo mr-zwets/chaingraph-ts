@@ -13,7 +13,7 @@
   "dependencies": {
     "@bitauth/libauth": "^3.0.0",
     "@urql/core": "^5.0.8",
-    "gql.tada": "^1.8.10",
+    "gql.tada": "1.8.2",
     "graphql-ws": "^5.16.0",
     "ws": "^8.18.0"
   },
