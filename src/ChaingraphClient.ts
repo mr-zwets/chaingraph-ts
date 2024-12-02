@@ -27,8 +27,8 @@ export class ChaingraphClient {
   ) {
     // create options object for createWSClient
     const wsClientOptions: ClientOptions = { url: chaingraphUrl }
-    // provide custom webSocketImpl option when using Node as runtime
-    if(typeof process === 'object') wsClientOptions.webSocketImpl = WebSocket
+    // provide custom webSocketImpl option running in server environment
+    if(typeof window === 'undefined') wsClientOptions.webSocketImpl = WebSocket
     const wsClient = createWSClient(wsClientOptions);
 
     // create Urql client with subscriptionExchange
