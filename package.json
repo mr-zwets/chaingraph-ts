@@ -4,7 +4,8 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "rm -r dist && yarn tsc && yarn build:copytypes",
+    "build:copytypes": "cd dist && mkdir generated && cp ../src/generated/graphql-env.d.ts generated/",
     "test": "vitest"
   },
   "author": "mr-zwets",
@@ -13,7 +14,7 @@
   "dependencies": {
     "@bitauth/libauth": "^3.0.0",
     "@urql/core": "^5.0.8",
-    "gql.tada": "1.8.2",
+    "gql.tada": "^1.8.10",
     "graphql-ws": "^5.16.0",
     "ws": "^8.18.0"
   },
