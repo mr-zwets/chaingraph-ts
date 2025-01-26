@@ -33,6 +33,7 @@ export async function getUtxosForLockingBytecode(
       token_category
       fungible_token_amount
       nonfungible_token_commitment
+      nonfungible_token_capability
     }
   }`);
   const variables = {
