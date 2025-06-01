@@ -13,16 +13,16 @@
   "description": "Chaingraph-ts is a TypeScript library that simplifies using Chaingraph by providing type-safe GraphQL interactions and helper functions.",
   "dependencies": {
     "@bitauth/libauth": "^3.0.0",
-    "@urql/core": "^5.0.8",
+    "@urql/core": "^5.1.1",
     "gql.tada": "^1.8.10",
-    "graphql-ws": "^5.16.0",
-    "ws": "^8.18.0"
+    "graphql-ws": "^6.0.5",
+    "ws": "^8.18.2"
   },
   "devDependencies": {
-    "@types/ws": "^8.5.13",
-    "globals": "^15.14.0",
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.5"
+    "@types/ws": "^8.18.1",
+    "globals": "^16.2.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
   },
   "directories": {
     "test": "test"
