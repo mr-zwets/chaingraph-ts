@@ -50,7 +50,9 @@ export class ChaingraphClient {
         }),
       ],
       // disable urql cache
-      requestPolicy: "network-only"
+      requestPolicy: "network-only",
+      // Force POST for all operations, as Hasura uses POST endpoints
+      preferGetMethod: false
     });
   }
 

@@ -31,7 +31,7 @@ To test GraphQL queries and explore the schema interactively, visit [try.chaingr
 Install Chaingraph-ts from NPM with:
 
 ```bash
-npm install chaingraph-ts
+pnpm install chaingraph-ts
 ```
 
 ## Example Usage
@@ -153,7 +153,7 @@ async function handleNewBlock(newBlockHeight: number, timestamp: string) {
 To build the library locally, use:
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 ## Run the tests
@@ -161,5 +161,5 @@ npm run build
 To run the library tests, use:
 
 ```bash
-npm run test
+pnpm run test
 ```
