@@ -10,7 +10,6 @@ import {
   type OperationResultSource
 } from '@urql/core';
 import { type ClientOptions, createClient as createWSClient } from 'graphql-ws';
-import WebSocket from 'ws'
 import {
   getLatestBlockheight,
   getRawTransaction,
@@ -25,11 +24,7 @@ export class ChaingraphClient {
   constructor(
     chaingraphUrl: string
   ) {
-    // create options object for createWSClient
-    const wsClientOptions: ClientOptions = { url: chaingraphUrl }
-    // provide custom webSocketImpl option running in server environment
-    if(typeof window === 'undefined') wsClientOptions.webSocketImpl = WebSocket
-    const wsClient = createWSClient(wsClientOptions);
+    const wsClient = createWSClient({ url: chaingraphUrl });
 
     // create Urql client with subscriptionExchange
     this.client = new Client({
