@@ -1,9 +1,11 @@
 {
   "name": "chaingraph-ts",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "main": "dist/index.js",
+  "files": ["dist"],
   "type": "module",
   "scripts": {
+    "prepare": "pnpm build",
     "build": "rm -r dist && pnpm tsc && pnpm build:copytypes",
     "build:copytypes": "cd dist && mkdir generated && cp ../src/generated/graphql-env.d.ts generated/",
     "test": "vitest"
