@@ -2,28 +2,41 @@
   "name": "chaingraph-ts",
   "version": "0.2.6",
   "main": "dist/index.js",
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "docs"
+  ],
   "type": "module",
   "scripts": {
     "prepare": "pnpm build",
-    "build": "rm -r dist && pnpm tsc && pnpm build:copytypes",
-    "build:copytypes": "cd dist && mkdir generated && cp ../src/generated/graphql-env.d.ts generated/",
-    "test": "vitest"
+    "build": "shx rm -rf dist && tsc && pnpm build:copytypes",
+    "build:copytypes": "shx mkdir -p dist/generated && shx cp src/generated/graphql-env.d.ts dist/generated/",
+    "test": "vitest",
+    "lint": "eslint .",
+    "check": "tsc --noEmit && eslint .",
+    "test:unit": "vitest --run --exclude 'test/integration/**' --passWithNoTests",
+    "test:integration": "vitest --run test/integration"
   },
   "author": "mr-zwets",
   "license": "ISC",
   "description": "Chaingraph-ts is a TypeScript library that simplifies using Chaingraph by providing type-safe GraphQL interactions and helper functions.",
   "dependencies": {
     "@bitauth/libauth": "^3.0.0",
-    "@urql/core": "^6.0.1",
-    "gql.tada": "^1.9.0",
-    "graphql": "^16.11.0",
-    "graphql-ws": "^6.0.6"
+    "@urql/core": "^6.0.3",
+    "@urql/exchange-retry": "^2.0.0",
+    "gql.tada": "^1.11.3",
+    "graphql-ws": "^6.2.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.4",
+    "eslint": "^10.10.0",
     "globals": "^17.4.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.0"
+    "graphql": "^16.13.1",
+    "shx": "^0.4.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.0"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -44,5 +57,8 @@
   "bugs": {
     "url": "https://github.com/mr-zwets/chaingraph-ts/issues"
   },
-  "homepage": "https://github.com/mr-zwets/chaingraph-ts#readme"
+  "homepage": "https://github.com/mr-zwets/chaingraph-ts#readme",
+  "peerDependencies": {
+    "graphql": "^16.11.0 || ^17.0.0"
+  }
 }

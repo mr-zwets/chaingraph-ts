@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ChaingraphClient } from '../src/index.js'
+import { ChaingraphClient } from '../../src/index.js'
 
 describe('test the ChaingraphClient helperFunctions', () => {
   const chaingraphUrl = "https://gql.chaingraph.pat.mn/v1/graphql"

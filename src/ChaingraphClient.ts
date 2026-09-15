@@ -9,7 +9,7 @@ import {
   type OperationResult,
   type OperationResultSource
 } from '@urql/core';
-import { type ClientOptions, createClient as createWSClient } from 'graphql-ws';
+import { createClient as createWSClient } from 'graphql-ws';
 import {
   getLatestBlockheight,
   getRawTransaction,
@@ -52,6 +52,7 @@ export class ChaingraphClient {
   }
 
   // Expose the query method as a class method
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   query<Data = any, Variables extends AnyVariables = AnyVariables>(
     query: DocumentInput<Data, Variables>,
     variables: Variables,
@@ -61,6 +62,7 @@ export class ChaingraphClient {
   }
 
   // Expose the subscribe method as a class method
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subscribe<Data = any, Variables extends AnyVariables = AnyVariables>(
     query: DocumentInput<Data, Variables>,
     variables: Variables,
