@@ -125,6 +125,19 @@ const rows = await paginate(
 Offset paging needs the query to order deterministically (`order_by`), and rows can shift
 between pages as new ones land, which is what the key argument deduplicates.
 
+## Subscriptions re-run their query
+
+Hasura live queries poll: for each distinct document and variable pair it re-runs the SQL on a
+refetch interval (1s by default), diffs the result and pushes the changes. A subscription is
+therefore as expensive as its query, repeated for as long as anyone is subscribed, and a heavy
+document is re-executed and re-serialised every tick even when nothing changed. One production
+instance measured a 27 MB subscription payload costing 3s per tick.
+
+Subscribe to a change signal rather than to state: a `limit: 1` document ordered by the newest
+row is enough to learn that something happened, and the state itself can then be fetched once
+with a query. Subscribers sharing a document and variables share one execution, so reusing the
+same subscription across a page costs no more than one.
+
 ## Avoid `locking_bytecode_pattern` in a `where`
 
 The column is computed by a plpgsql function per candidate row, so filtering on it (to exclude
