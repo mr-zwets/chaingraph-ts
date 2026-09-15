@@ -41,10 +41,12 @@ async function nodeToFilterBy(
   const filterReplaced = options?.filterReplaced ?? client.options.filterReplaced ?? true;
   if (!filterReplaced) return undefined;
 
+  // Only an instance that indexes no nodes at all resolves to undefined; a lookup that failed
+  // throws instead of quietly dropping the filter.
   const node = await client.resolveNode();
   if (!node) {
     console.warn(
-      'chaingraph-ts: instance exposes no nodes, querying without filtering out replaced ' +
+      'chaingraph-ts: instance indexes no nodes, querying without filtering out replaced ' +
       'and orphaned transactions'
     );
   }

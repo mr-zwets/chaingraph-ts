@@ -58,7 +58,11 @@ re-checked afterwards; the helper does both.
 ## Other changes
 
 - A network error is retried once by default, two attempts in total; pass `retry: false` to send
-  every operation once, or `retry: { maxNumberAttempts: 3 }` for more.
+  every operation once, or `retry: { maxNumberAttempts: 3 }` for more. Mutations are never
+  retried, so a broadcast whose response timed out is not sent a second time.
+- A node lookup that fails now throws rather than falling back to unscoped, unfiltered queries.
+  Set `nodeName` if you would rather keep querying through an outage of the instance's `node`
+  table; a configured name cannot mix chains.
 - `close()` disposes the websocket, so a script that subscribed can exit.
 - `subscribeWithCallback` routes subscription and callback errors to an `onError` handler.
   `subscribe` is unchanged.

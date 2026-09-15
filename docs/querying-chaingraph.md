@@ -160,6 +160,18 @@ OP_RETURN outputs, say) costs a function call for every row the rest of the quer
 is fine to select, and worth avoiding in a `where` on anything protocol-wide. An exact-bytecode
 lookup does not need it at all: `search_output` already matched the script you asked for.
 
+## Broadcasting
+
+`send_transaction` is the only mutation Chaingraph exposes: it hands an encoded transaction to
+one of the instance's nodes for relay, which is why the node matters here as much as it does for
+reads. It is worth knowing that most projects broadcast through an Electrum server instead and
+use Chaingraph for reads only, so this path gets far less exercise than the query path.
+
+Do not retry a broadcast on a network error. If the node received the transaction before the
+response timed out, the second attempt fails with an already-known error, which reads as a
+failed broadcast for a transaction that is on its way. `ChaingraphClient` excludes mutations
+from its retry policy for this reason.
+
 ## Exploring the schema
 
 [try.chaingraph.cash](https://try.chaingraph.cash/) runs queries against a live instance and

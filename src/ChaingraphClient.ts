@@ -52,7 +52,8 @@ export interface ChaingraphClientOptions {
   nodeName?: string;
   /** Filter out replaced and orphaned transactions. Defaults to true. */
   filterReplaced?: boolean;
-  /** Extra request headers, for instances behind authentication. */
+  /** Extra request headers, for instances behind authentication. Queries only: subscriptions
+   *  authenticate through `wsOptions.connectionParams`. */
   headers?: Record<string, string>;
   /** Aborts a request after this many milliseconds. Unset means no timeout. */
   timeoutMs?: number;
@@ -63,12 +64,15 @@ export interface ChaingraphClientOptions {
 }
 
 // Only network errors are retried; a GraphQL error is deterministic and retrying it just waits.
-// maxNumberAttempts counts attempts, not retries: 2 means one retry.
+// Mutations are never retried: send_transaction is not idempotent from the caller's side, and a
+// broadcast that reached the node before the response timed out would fail on the second try
+// with an already-known error, reported to the caller as a failure for a transaction that went
+// out. maxNumberAttempts counts attempts, not retries: 2 means one retry.
 const defaultRetryOptions: Partial<RetryExchangeOptions> = {
   initialDelayMs: 1000,
   maxDelayMs: 10000,
   maxNumberAttempts: 2,
-  retryIf: error => Boolean(error?.networkError)
+  retryIf: (error, operation) => operation.kind !== 'mutation' && Boolean(error?.networkError)
 };
 
 export class ChaingraphClient {
@@ -143,7 +147,8 @@ export class ChaingraphClient {
   }
 
   // Wonka is stream based rather than promise based, so an error thrown by the callback would
-  // otherwise surface as an unhandled rejection.
+  // otherwise surface as an unhandled rejection. Note that results are not queued behind the
+  // callback: a slow async callback can still be running when the next result arrives.
   subscribeWithCallback<Data, Variables extends AnyVariables>(
     query: DocumentInput<Data, Variables>,
     variables: Variables,
@@ -151,8 +156,8 @@ export class ChaingraphClient {
     onError?: (error: unknown) => void
     // annotated because the inferred wonka Subscription type is not portable
   ): { unsubscribe: () => void } {
+    const name = documentName(query);
     return this.client.subscription(query, variables).subscribe(async result => {
-      const name = documentName(query);
       try {
         if (result.error) throw new ChaingraphSubscriptionError(name, result.error);
         if (!result.data) {
@@ -181,11 +186,14 @@ export class ChaingraphClient {
       return await this.resolvedNode;
     } catch (error) {
       if (error instanceof ChaingraphNodeResolutionError) throw error;
-      // The lookup failed rather than answering, so it is not cached: a temporary outage
-      // should not leave this client unfiltered for the rest of its life.
+      // The lookup failed rather than answering, so it is not cached: a temporary outage should
+      // not leave this client unfiltered for the rest of its life.
       this.resolvedNode = undefined;
+      // A configured node name cannot mix chains, so it stands in for the lookup. Without one,
+      // the failure is raised rather than quietly degrading to unscoped, unfiltered queries.
       const { nodeName } = this.options;
-      return nodeName ? { name: nodeName } : undefined;
+      if (nodeName) return { name: nodeName };
+      throw error;
     }
   }
 

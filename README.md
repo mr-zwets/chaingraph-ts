@@ -73,12 +73,15 @@ const chaingraphClient = new ChaingraphClient(chaingraphUrl, {
   filterReplaced: true,     // exclude replaced and orphaned transactions, the default
   headers: { authorization: "..." },
   timeoutMs: 20_000,        // urql has no timeout of its own
-  retry: false,             // network errors get one retry by default
+  retry: false,             // network errors get one retry by default (mutations never do)
 })
 ```
 
 Instances that index several networks throw `ChaingraphNodeResolutionError` until `network` or
 `nodeName` picks one, so results are never a silent mix of chains.
+
+`headers` applies to queries and mutations only. Subscriptions go over the websocket, which
+authenticates through `wsOptions: { connectionParams: { ... } }`.
 
 ## Custom Query Example
 
@@ -125,6 +128,9 @@ if (!resultQueryAuthHead.data) {
   throw new Error("No data returned from Chaingraph query");
 }
 const authHeadTxId = resultQueryAuthHead.data.transaction?.[0].authchains?.[0].authhead?.hash
+if (!authHeadTxId) {
+  throw new Error("No authhead found for this token");
+}
 // results carry the '\x' prefix, byteaToHex strips it again
 console.log("Auth Head Transaction Hash:", byteaToHex(authHeadTxId));
 ```
