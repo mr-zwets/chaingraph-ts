@@ -1,6 +1,6 @@
 {
   "name": "chaingraph-ts",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "main": "dist/index.js",
   "files": [
     "dist",
@@ -13,7 +13,7 @@
     "build:copytypes": "shx mkdir -p dist/generated && shx cp src/generated/graphql-env.d.ts dist/generated/",
     "test": "vitest",
     "lint": "eslint .",
-    "check": "tsc --noEmit && eslint .",
+    "check": "tsc --noEmit && tsc --noEmit -p test/tsconfig.json && eslint .",
     "test:unit": "vitest --run --exclude 'test/integration/**' --passWithNoTests",
     "test:integration": "vitest --run test/integration"
   },
