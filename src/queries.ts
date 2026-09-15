@@ -29,7 +29,6 @@ export const queryUtxosFilteredByNode = graphql(`query UtxosFilteredByNode(
         { node_validations: { node: { name: { _eq: $node } } } }
         { block_inclusions: { block: { accepted_by: { node: { name: { _eq: $node } } } } } }
       ] } } }
-      locking_bytecode_pattern: { _nlike: "6a%" }
     }
     order_by: [{ transaction_hash: asc }, { output_index: asc }]
     limit: $limit
@@ -54,10 +53,7 @@ export const queryUtxosUnfiltered = graphql(`query UtxosUnfiltered(
 ) {
   search_output(
     args: { locking_bytecode_hex: $lockingBytecodeHexes }
-    where: {
-      _not: { spent_by: {} }
-      locking_bytecode_pattern: { _nlike: "6a%" }
-    }
+    where: { _not: { spent_by: {} } }
     order_by: [{ transaction_hash: asc }, { output_index: asc }]
     limit: $limit
     offset: $offset

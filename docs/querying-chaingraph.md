@@ -95,11 +95,23 @@ search_output(args: { locking_bytecode_hex: $lockingBytecodeHexes }) { … }
 Its argument is a Postgres text array of plain hex without the `\x` prefix, so
 `{76a914…88ac,76a914…88ac}`. Several locking bytecodes can be looked up in one call.
 
+It matches the locking bytecode exactly. The 25-byte prefix index only accelerates the lookup,
+so a bytecode that merely shares a prefix is not returned.
+
+Two things follow from how the function is written. It is plpgsql with its own `ORDER BY`, so it
+materialises and sorts every match before a `where`, `limit` or `order_by` of yours is applied:
+paging bounds the payload, not the work the instance does. And a query that goes on to check the
+output's transaction (the replaced-transaction filter above does) costs considerably more than
+an output-level question such as a balance, because the transaction is then visited per
+candidate row.
+
 ## Row counts are clamped
 
 Instances cap how many rows a select returns and drop the rest without reporting it, so an
-unbounded query truncates silently. Page through with `limit` and `offset`, and keep the page
-size at or below the clamp: a clamped page looks like a final short page and stops paging early.
+unbounded query truncates silently. The caps are per instance and per role; one production
+instance uses 5,000 on `output`, 1,000 on `input` and 10,000 on `transaction`. Page through with
+`limit` and `offset`, and keep the page size at or below the smallest cap you may hit: a clamped
+page looks like a final short page and stops paging early.
 
 ```ts
 import { paginate } from "chaingraph-ts"
@@ -112,6 +124,13 @@ const rows = await paginate(
 
 Offset paging needs the query to order deterministically (`order_by`), and rows can shift
 between pages as new ones land, which is what the key argument deduplicates.
+
+## Avoid `locking_bytecode_pattern` in a `where`
+
+The column is computed by a plpgsql function per candidate row, so filtering on it (to exclude
+OP_RETURN outputs, say) costs a function call for every row the rest of the query produces. It
+is fine to select, and worth avoiding in a `where` on anything protocol-wide. An exact-bytecode
+lookup does not need it at all: `search_output` already matched the script you asked for.
 
 ## Exploring the schema
 
