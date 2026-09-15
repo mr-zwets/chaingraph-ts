@@ -49,6 +49,12 @@ const client = new ChaingraphClient("https://demo.chaingraph.cash/v1/graphql", {
 Single-node instances need no configuration. `filterReplaced: false` restores the old
 unfiltered behaviour, per client or per call.
 
+## P2SH32 lookups
+
+`getUtxosForLockingBytecode` accepts a P2SH32 script. Chaingraph's `search_output` matches on
+the first 25 bytes, so a 35-byte P2SH32 script has to be truncated before it is passed and
+re-checked afterwards; the helper does both.
+
 ## Other changes
 
 - Network errors are retried twice by default; pass `retry: false` to send every operation once.

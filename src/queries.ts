@@ -11,9 +11,11 @@ export const queryChaingraphNodes = graphql(`query ChaingraphNodes {
 
 // Spendable outputs according to one node: both the output's own transaction and any spender
 // must be validated or mined by that node, so replaced and orphaned transactions drop out.
+// search_output only matches the first 25 bytes, so the full bytecode is checked in the where.
 // See docs/querying-chaingraph.md for why this uses search_output and names the node.
 export const queryUtxosFilteredByNode = graphql(`query UtxosFilteredByNode(
   $lockingBytecodeHexes: _text
+  $lockingBytecode: bytea
   $node: String!
   $limit: Int
   $offset: Int
@@ -21,6 +23,7 @@ export const queryUtxosFilteredByNode = graphql(`query UtxosFilteredByNode(
   search_output(
     args: { locking_bytecode_hex: $lockingBytecodeHexes }
     where: {
+      locking_bytecode: { _eq: $lockingBytecode }
       transaction: { _or: [
         { node_validations: { node: { name: { _eq: $node } } } }
         { block_inclusions: { block: { accepted_by: { node: { name: { _eq: $node } } } } } }
@@ -48,12 +51,16 @@ export const queryUtxosFilteredByNode = graphql(`query UtxosFilteredByNode(
 // Fallback for instances where no node can be resolved: keeps pre-v0.3.0 semantics.
 export const queryUtxosUnfiltered = graphql(`query UtxosUnfiltered(
   $lockingBytecodeHexes: _text
+  $lockingBytecode: bytea
   $limit: Int
   $offset: Int
 ) {
   search_output(
     args: { locking_bytecode_hex: $lockingBytecodeHexes }
-    where: { _not: { spent_by: {} } }
+    where: {
+      locking_bytecode: { _eq: $lockingBytecode }
+      _not: { spent_by: {} }
+    }
     order_by: [{ transaction_hash: asc }, { output_index: asc }]
     limit: $limit
     offset: $offset

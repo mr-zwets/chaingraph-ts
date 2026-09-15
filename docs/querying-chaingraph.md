@@ -95,8 +95,23 @@ search_output(args: { locking_bytecode_hex: $lockingBytecodeHexes }) { … }
 Its argument is a Postgres text array of plain hex without the `\x` prefix, so
 `{76a914…88ac,76a914…88ac}`. Several locking bytecodes can be looked up in one call.
 
-It matches the locking bytecode exactly. The 25-byte prefix index only accelerates the lookup,
-so a bytecode that merely shares a prefix is not returned.
+Its argument is matched against the **first 25 bytes** of the stored locking bytecode, not
+against the whole script: the function body is `substring(locking_bytecode from 0 for 26) =
+ANY(...)`. Its comment says "up to 25 bytes, supporting both P2PKH and P2SH outputs", which
+covers P2PKH (25 bytes) and P2SH20 (23 bytes) but not P2SH32, which is 35 bytes and was
+introduced after the function. Passing a P2SH32 script whole returns nothing at all.
+
+So truncate to the first 25 bytes and re-check the full script in the `where`:
+
+```graphql
+search_output(
+  args: { locking_bytecode_hex: $first25BytesHex }
+  where: { locking_bytecode: { _eq: $fullLockingBytecode } }
+)
+```
+
+The `where` is a cheap filter over the few rows the prefix matched, and it keeps a script that
+merely shares the first 25 bytes out of the result.
 
 Two things follow from how the function is written. It is plpgsql with its own `ORDER BY`, so it
 materialises and sorts every match before a `where`, `limit` or `order_by` of yours is applied:

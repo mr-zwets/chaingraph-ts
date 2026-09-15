@@ -15,3 +15,9 @@ export function byteaToHex(bytea: string) {
 export function hexesToTextArray(hexes: string[]) {
   return `{${hexes.map(byteaToHex).join(',')}}`;
 }
+
+// search_output compares its argument against the first 25 bytes of the locking bytecode, so a
+// longer script (P2SH32 is 35 bytes) matches nothing unless it is truncated to that prefix.
+export function lockingBytecodePrefix(lockingBytecode: string) {
+  return byteaToHex(lockingBytecode).slice(0, 25 * 2);
+}

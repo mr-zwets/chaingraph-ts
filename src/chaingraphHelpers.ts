@@ -1,6 +1,6 @@
 import type { ChaingraphClient } from "./ChaingraphClient.js";
 import { binToHex, cashAddressToLockingBytecode } from "@bitauth/libauth";
-import { byteaToHex, hexesToTextArray, hexToBytea } from "./bytea.js";
+import { byteaToHex, hexesToTextArray, hexToBytea, lockingBytecodePrefix } from "./bytea.js";
 import {
   mutationSendRawTransaction,
   queryLatestBlock,
@@ -71,15 +71,16 @@ export async function getUtxosForLockingBytecode(
   addressLockingBytecode: string,
   options?: UtxoQueryOptions
 ) {
-  const lockingBytecodeHexes = hexesToTextArray([addressLockingBytecode])
+  const lockingBytecodeHexes = hexesToTextArray([lockingBytecodePrefix(addressLockingBytecode)])
+  const lockingBytecode = hexToBytea(addressLockingBytecode)
   const node = await nodeToFilterBy(this, options)
 
   const fetchPage = async (limit: number, offset: number) => {
     if (node) {
-      const variables = { lockingBytecodeHexes, node, limit, offset }
+      const variables = { lockingBytecodeHexes, lockingBytecode, node, limit, offset }
       return (await runQuery(this.client, queryUtxosFilteredByNode, variables)).search_output
     }
-    const variables = { lockingBytecodeHexes, limit, offset }
+    const variables = { lockingBytecodeHexes, lockingBytecode, limit, offset }
     return (await runQuery(this.client, queryUtxosUnfiltered, variables)).search_output
   }
   const outputs: ChaingraphUtxo[] = await paginate(
