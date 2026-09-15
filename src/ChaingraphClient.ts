@@ -56,13 +56,14 @@ export interface ChaingraphClientOptions {
   headers?: Record<string, string>;
   /** Aborts a request after this many milliseconds. Unset means no timeout. */
   timeoutMs?: number;
-  /** Retry options, or false to send every operation once. Defaults to retrying twice. */
+  /** Retry options, or false to send every operation once. Defaults to two attempts. */
   retry?: Partial<RetryExchangeOptions> | false;
   /** Passed to the graphql-ws client used for subscriptions. */
   wsOptions?: Partial<ClientOptions>;
 }
 
 // Only network errors are retried; a GraphQL error is deterministic and retrying it just waits.
+// maxNumberAttempts counts attempts, not retries: 2 means one retry.
 const defaultRetryOptions: Partial<RetryExchangeOptions> = {
   initialDelayMs: 1000,
   maxDelayMs: 10000,

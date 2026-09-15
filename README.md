@@ -73,7 +73,7 @@ const chaingraphClient = new ChaingraphClient(chaingraphUrl, {
   filterReplaced: true,     // exclude replaced and orphaned transactions, the default
   headers: { authorization: "..." },
   timeoutMs: 20_000,        // urql has no timeout of its own
-  retry: false,             // network errors are retried twice by default
+  retry: false,             // network errors get one retry by default
 })
 ```
 

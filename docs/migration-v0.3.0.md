@@ -33,7 +33,7 @@ Failures now throw `ChaingraphQueryError`, whose `cause` is the urql `CombinedEr
 ## UTXO queries are filtered and scoped to one node
 
 `getUtxosForAddress` and `getUtxosForLockingBytecode` now exclude replaced and orphaned
-transactions, exclude OP_RETURN outputs, and are scoped to a single indexed node. Expect fewer
+transactions, and are scoped to a single indexed node. Expect fewer
 rows than v0.2.x returned on an address touched by a double spend, and more where a spender had
 been replaced.
 
@@ -57,7 +57,8 @@ re-checked afterwards; the helper does both.
 
 ## Other changes
 
-- Network errors are retried twice by default; pass `retry: false` to send every operation once.
+- A network error is retried once by default, two attempts in total; pass `retry: false` to send
+  every operation once, or `retry: { maxNumberAttempts: 3 }` for more.
 - `close()` disposes the websocket, so a script that subscribed can exit.
 - `subscribeWithCallback` routes subscription and callback errors to an `onError` handler.
   `subscribe` is unchanged.
