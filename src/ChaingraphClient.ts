@@ -9,7 +9,12 @@ import {
   type OperationResult,
   type OperationResultSource
 } from '@urql/core';
-import { createClient as createWSClient } from 'graphql-ws';
+import { retryExchange, type RetryExchangeOptions } from '@urql/exchange-retry';
+import {
+  createClient as createWSClient,
+  type Client as WSClient,
+  type ClientOptions
+} from 'graphql-ws';
 import {
   getLatestBlockheight,
   getRawTransaction,
@@ -18,9 +23,19 @@ import {
   sendRawTransaction,
   type UtxoQueryOptions
 } from './chaingraphHelpers.js';
-import { ChaingraphNodeResolutionError } from './errors.js';
+import { ChaingraphNodeResolutionError, ChaingraphSubscriptionError } from './errors.js';
 import { queryChaingraphNodes } from './queries.js';
-import { runQuery } from './runQuery.js';
+import { documentName, runQuery } from './runQuery.js';
+
+// Urql has no timeout of its own, so one is applied by wrapping fetch.
+function timeoutFetch(timeoutMs?: number) {
+  if (timeoutMs === undefined) return undefined;
+  return (input: RequestInfo | URL, init?: RequestInit) => {
+    const timeoutSignal = AbortSignal.timeout(timeoutMs);
+    const signal = init?.signal ? AbortSignal.any([init.signal, timeoutSignal]) : timeoutSignal;
+    return fetch(input, { ...init, signal });
+  };
+}
 
 export type ChaingraphNetwork = 'mainnet' | 'chipnet' | 'testnet' | 'regtest';
 
@@ -37,12 +52,29 @@ export interface ChaingraphClientOptions {
   nodeName?: string;
   /** Filter out replaced and orphaned transactions. Defaults to true. */
   filterReplaced?: boolean;
+  /** Extra request headers, for instances behind authentication. */
+  headers?: Record<string, string>;
+  /** Aborts a request after this many milliseconds. Unset means no timeout. */
+  timeoutMs?: number;
+  /** Retry options, or false to send every operation once. Defaults to retrying twice. */
+  retry?: Partial<RetryExchangeOptions> | false;
+  /** Passed to the graphql-ws client used for subscriptions. */
+  wsOptions?: Partial<ClientOptions>;
 }
+
+// Only network errors are retried; a GraphQL error is deterministic and retrying it just waits.
+const defaultRetryOptions: Partial<RetryExchangeOptions> = {
+  initialDelayMs: 1000,
+  maxDelayMs: 10000,
+  maxNumberAttempts: 2,
+  retryIf: error => Boolean(error?.networkError)
+};
 
 export class ChaingraphClient {
   client: Client;
   options: ChaingraphClientOptions;
 
+  private wsClient: WSClient;
   private resolvedNode?: Promise<ChaingraphNode | undefined>;
 
   constructor(
@@ -50,31 +82,43 @@ export class ChaingraphClient {
     options: ChaingraphClientOptions = {}
   ) {
     this.options = options;
-    const wsClient = createWSClient({ url: chaingraphUrl });
+    const wsClient = createWSClient({ url: chaingraphUrl, ...options.wsOptions });
+    this.wsClient = wsClient;
+
+    const exchanges = [cacheExchange];
+    if (options.retry !== false) {
+      // Order matters: retryExchange has to come before fetchExchange
+      exchanges.push(retryExchange({ ...defaultRetryOptions, ...options.retry }));
+    }
+    exchanges.push(fetchExchange);
+    exchanges.push(subscriptionExchange({
+      forwardSubscription(request) {
+        const input = { ...request, query: request.query || '' };
+        return {
+          subscribe(sink) {
+            const unsubscribe = wsClient.subscribe(input, sink);
+            return { unsubscribe };
+          },
+        };
+      },
+    }));
 
     // create Urql client with subscriptionExchange
     this.client = new Client({
       url: chaingraphUrl,
-      exchanges: [
-        cacheExchange,
-        fetchExchange,
-        subscriptionExchange({
-          forwardSubscription(request) {
-            const input = { ...request, query: request.query || '' };
-            return {
-              subscribe(sink) {
-                const unsubscribe = wsClient.subscribe(input, sink);
-                return { unsubscribe };
-              },
-            };
-          },
-        }),
-      ],
+      exchanges,
+      fetchOptions: { headers: options.headers },
+      fetch: timeoutFetch(options.timeoutMs),
       // disable urql cache
       requestPolicy: "network-only",
       // Force POST for all operations, as Hasura uses POST endpoints
       preferGetMethod: false
     });
+  }
+
+  /** Closes the websocket, so a script that subscribed can exit. */
+  async close() {
+    await this.wsClient.dispose();
   }
 
   // Expose the query method as a class method
@@ -95,6 +139,33 @@ export class ChaingraphClient {
     context?: Partial<OperationContext>
   ): OperationResultSource<OperationResult<Data, Variables>> {
     return this.client.subscription(query, variables, context);
+  }
+
+  // Wonka is stream based rather than promise based, so an error thrown by the callback would
+  // otherwise surface as an unhandled rejection.
+  subscribeWithCallback<Data, Variables extends AnyVariables>(
+    query: DocumentInput<Data, Variables>,
+    variables: Variables,
+    callback: (data: Data) => void | Promise<void>,
+    onError?: (error: unknown) => void
+    // annotated because the inferred wonka Subscription type is not portable
+  ): { unsubscribe: () => void } {
+    return this.client.subscription(query, variables).subscribe(async result => {
+      const name = documentName(query);
+      try {
+        if (result.error) throw new ChaingraphSubscriptionError(name, result.error);
+        if (!result.data) {
+          throw new ChaingraphSubscriptionError(name, new Error('no data returned'));
+        }
+        await callback(result.data);
+      } catch (error) {
+        if (onError) {
+          onError(error);
+          return;
+        }
+        console.error(error);
+      }
+    });
   }
 
   /**

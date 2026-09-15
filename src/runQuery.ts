@@ -2,6 +2,12 @@ import type { AnyVariables, Client, TypedDocumentNode } from '@urql/core';
 import type { DocumentNode } from 'graphql';
 import { ChaingraphQueryError } from './errors.js';
 
+// Queries may be passed as a string, which carries no operation name.
+export function documentName(document: string | DocumentNode) {
+  if (typeof document === 'string') return 'anonymous';
+  return operationName(document);
+}
+
 export function operationName(document: DocumentNode) {
   for (const definition of document.definitions) {
     if (definition.kind === 'OperationDefinition' && definition.name) return definition.name.value;
