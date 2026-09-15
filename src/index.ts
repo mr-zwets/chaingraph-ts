@@ -7,6 +7,7 @@ export type {
 export type { ChaingraphUtxo, UtxoQueryOptions } from './chaingraphHelpers.js';
 export { graphql } from './graphql.js';
 export { byteaToHex, hexToBytea } from './bytea.js';
+export { CHAINGRAPH_PAGE_SIZE, paginate } from './paginate.js';
 export {
   ChaingraphNodeResolutionError,
   ChaingraphQueryError,

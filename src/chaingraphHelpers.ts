@@ -9,6 +9,7 @@ import {
   queryUtxosFilteredByNode,
   queryUtxosUnfiltered
 } from "./queries.js";
+import { paginate } from "./paginate.js";
 import { runMutation, runQuery } from "./runQuery.js";
 
 export interface UtxoQueryOptions {
@@ -73,14 +74,17 @@ export async function getUtxosForLockingBytecode(
   const lockingBytecodeHexes = hexesToTextArray([addressLockingBytecode])
   const node = await nodeToFilterBy(this, options)
 
-  let outputs: ChaingraphUtxo[]
-  if (node) {
-    const variables = { lockingBytecodeHexes, node, limit: null, offset: null }
-    outputs = (await runQuery(this.client, queryUtxosFilteredByNode, variables)).search_output
-  } else {
-    const variables = { lockingBytecodeHexes, limit: null, offset: null }
-    outputs = (await runQuery(this.client, queryUtxosUnfiltered, variables)).search_output
+  const fetchPage = async (limit: number, offset: number) => {
+    if (node) {
+      const variables = { lockingBytecodeHexes, node, limit, offset }
+      return (await runQuery(this.client, queryUtxosFilteredByNode, variables)).search_output
+    }
+    const variables = { lockingBytecodeHexes, limit, offset }
+    return (await runQuery(this.client, queryUtxosUnfiltered, variables)).search_output
   }
+  const outputs: ChaingraphUtxo[] = await paginate(
+    fetchPage, output => `${output.transaction_hash}:${output.output_index}`
+  )
 
   return outputs.map(output => ({
     ...output,
