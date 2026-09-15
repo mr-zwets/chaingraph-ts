@@ -176,19 +176,22 @@ export class ChaingraphClient {
    */
   async resolveNode() {
     this.resolvedNode ??= this.lookUpNode();
-    return await this.resolvedNode;
+    try {
+      return await this.resolvedNode;
+    } catch (error) {
+      if (error instanceof ChaingraphNodeResolutionError) throw error;
+      // The lookup failed rather than answering, so it is not cached: a temporary outage
+      // should not leave this client unfiltered for the rest of its life.
+      this.resolvedNode = undefined;
+      const { nodeName } = this.options;
+      return nodeName ? { name: nodeName } : undefined;
+    }
   }
 
   private async lookUpNode() {
     const { network, nodeName } = this.options;
 
-    let nodes: { name: string; internal_id: number }[];
-    try {
-      nodes = (await runQuery(this.client, queryChaingraphNodes, {})).node;
-    } catch {
-      // The instance does not expose its nodes; callers fall back to unfiltered queries.
-      return nodeName ? { name: nodeName } : undefined;
-    }
+    const nodes = (await runQuery(this.client, queryChaingraphNodes, {})).node;
     const names = nodes.map(node => node.name);
     const toNode = (name: string): ChaingraphNode => ({
       name,
