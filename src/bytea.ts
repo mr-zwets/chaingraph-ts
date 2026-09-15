@@ -2,16 +2,16 @@
 // followed by the hex, so both directions need converting.
 
 /** Adds the `\x` prefix a `bytea` query variable needs. */
-export function hexToBytea(hex: string): string {
+export function hexToBytea(hex: string) {
   return hex.startsWith('\\x') ? hex : `\\x${hex}`;
 }
 
 /** Strips the `\x` prefix from a `bytea` value returned by Chaingraph. */
-export function byteaToHex(bytea: string): string {
+export function byteaToHex(bytea: string) {
   return bytea.startsWith('\\x') ? bytea.slice(2) : bytea;
 }
 
 /** Formats hex strings as the Postgres text array `search_output` takes, without prefixes. */
-export function hexesToTextArray(hexes: string[]): string {
+export function hexesToTextArray(hexes: string[]) {
   return `{${hexes.map(byteaToHex).join(',')}}`;
 }

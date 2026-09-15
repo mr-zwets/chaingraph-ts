@@ -1,115 +1,140 @@
 import type { ChaingraphClient } from "./ChaingraphClient.js";
-import { graphql } from "./graphql.js";
 import { binToHex, cashAddressToLockingBytecode } from "@bitauth/libauth";
+import { byteaToHex, hexesToTextArray, hexToBytea } from "./bytea.js";
+import {
+  mutationSendRawTransaction,
+  queryLatestBlock,
+  queryLatestBlockForNode,
+  queryRawTransaction,
+  queryUtxosFilteredByNode,
+  queryUtxosUnfiltered
+} from "./queries.js";
+import { runMutation, runQuery } from "./runQuery.js";
+
+export interface UtxoQueryOptions {
+  /** Overrides the client's filterReplaced setting for this call. */
+  filterReplaced?: boolean;
+}
+
+export interface ChaingraphUtxo {
+  transaction_hash: string;
+  output_index: string;
+  value_satoshis: string;
+  locking_bytecode: string;
+  token_category: string | null;
+  fungible_token_amount: string | null;
+  nonfungible_token_commitment: string | null;
+  nonfungible_token_capability: 'none' | 'mutable' | 'minting' | null;
+}
+
+function byteaToHexOrNull(value: string | null | undefined) {
+  if (value === null || value === undefined) return null;
+  return byteaToHex(value);
+}
+
+// Resolves the node to filter by, or undefined when filtering is off or unavailable.
+async function nodeToFilterBy(
+  client: ChaingraphClient,
+  options?: UtxoQueryOptions
+) {
+  const filterReplaced = options?.filterReplaced ?? client.options.filterReplaced ?? true;
+  if (!filterReplaced) return undefined;
+
+  const node = await client.resolveNode();
+  if (!node) {
+    console.warn(
+      'chaingraph-ts: instance exposes no nodes, querying without filtering out replaced ' +
+      'and orphaned transactions'
+    );
+  }
+  return node?.name;
+}
 
 export async function getUtxosForAddress(
   this: ChaingraphClient,
-  address: string
+  address: string,
+  options?: UtxoQueryOptions
 ) {
   const resultDecodeCashAddress = cashAddressToLockingBytecode(address)
   if(typeof resultDecodeCashAddress === 'string'){
     throw new Error(resultDecodeCashAddress)
   }
-  
-  return await getUtxosForLockingBytecode.call(this, binToHex(resultDecodeCashAddress.bytecode))
+
+  return await getUtxosForLockingBytecode.call(
+    this, binToHex(resultDecodeCashAddress.bytecode), options
+  )
 }
 
 export async function getUtxosForLockingBytecode(
   this: ChaingraphClient,
-  addressLockingBytecode: string
+  addressLockingBytecode: string,
+  options?: UtxoQueryOptions
 ) {
-  const query = graphql(`query utxosForLockingBytecode (
-    $adressLockingBytecode: bytea
-  ) {
-    output(
-      where: {
-        locking_bytecode: { _eq: $adressLockingBytecode }
-        _not: { spent_by: {} }
-      }
-    ) {
-      transaction_hash
-      output_index
-      value_satoshis
-      token_category
-      fungible_token_amount
-      nonfungible_token_commitment
-      nonfungible_token_capability
-    }
-  }`);
-  const variables = {
-    adressLockingBytecode: `\\x${addressLockingBytecode}`
+  const lockingBytecodeHexes = hexesToTextArray([addressLockingBytecode])
+  const node = await nodeToFilterBy(this, options)
+
+  let outputs: ChaingraphUtxo[]
+  if (node) {
+    const variables = { lockingBytecodeHexes, node, limit: null, offset: null }
+    outputs = (await runQuery(this.client, queryUtxosFilteredByNode, variables)).search_output
+  } else {
+    const variables = { lockingBytecodeHexes, limit: null, offset: null }
+    outputs = (await runQuery(this.client, queryUtxosUnfiltered, variables)).search_output
   }
-  const queryResult = (await this.client.query(query, variables)).data
-  if (!queryResult) throw new Error('Error in ChainGraph query GetTransactionHex');
-  return queryResult.output
+
+  return outputs.map(output => ({
+    ...output,
+    transaction_hash: byteaToHex(output.transaction_hash),
+    locking_bytecode: byteaToHex(output.locking_bytecode),
+    token_category: byteaToHexOrNull(output.token_category),
+    nonfungible_token_commitment: byteaToHexOrNull(output.nonfungible_token_commitment)
+  }))
 }
 
 export async function sendRawTransaction(
   this: ChaingraphClient,
   rawTransactionHex: string
 ) {
-  const sendTransaction = graphql(`mutation sendRawTransaction(
-    $rawTransactionHex: String!
-  ) {
-    send_transaction(
-      request: {
-        node_internal_id: 1
-        encoded_hex: $rawTransactionHex
-      }
-    ) {
-      transaction_hash
-      validation_error_message
-      validation_success
-      transmission_error_message
-      transmission_success
+  const node = await this.resolveNode()
+  const returnData = await runMutation(this.client, mutationSendRawTransaction, {
+    rawTransactionHex,
+    // Instances index node 1 unless they serve several networks, where the node decides which.
+    nodeInternalId: node?.internalId ?? 1
+  })
+  const { send_transaction } = returnData
+  return {
+    ...returnData,
+    send_transaction: {
+      ...send_transaction,
+      transaction_hash: byteaToHexOrNull(send_transaction.transaction_hash)
     }
-  }`);
-  const variables = {
-    rawTransactionHex
   }
-  const returnData = (await this.client.query(sendTransaction, variables)).data
-  if (!returnData) throw new Error('Error in ChainGraph query sendRawTransaction');
-  return returnData
 }
 
+// Returns undefined when the instance has never seen the transaction.
 export async function getRawTransaction(
   this: ChaingraphClient,
   txId: string
 ) {
-  const query = graphql(`query rawTranswaction(
-    $txId: bytea!
-  ) {
-    transaction(
-      where:{
-        hash: { _eq: $txId }
-      }
-    ) {
-      encoded_hex
-    }
-  }`);
-  const variables = {
-    txId: `\\x${txId}`
-  }
-  const queryResult = (await this.client.query(query, variables)).data
-  if (!queryResult) throw new Error('Error in ChainGraph query GetTransactionHex');
-  return queryResult.transaction[0]
+  const { transaction } = await runQuery(this.client, queryRawTransaction, {
+    txHash: hexToBytea(txId)
+  })
+  return transaction[0]?.encoded_hex ?? undefined
 }
 
 export async function getLatestBlockheight(
   this: ChaingraphClient
 ) {
-  const query = graphql(`query blockWithHighestHeight {
-    block(
-      order_by: { height: desc },
-      limit: 1
-    ) {
-      hash
-      height
-      timestamp
-      encoded_hex
-    }
-  }`);
-  const queryResult = (await this.client.query(query, {})).data
-  if (!queryResult) throw new Error('Error in ChainGraph query GetTransactionHex');
-  return queryResult.block[0]
+  const node = await this.resolveNode()
+
+  let blocks
+  if (node) {
+    blocks = (await runQuery(this.client, queryLatestBlockForNode, { node: node.name })).block
+  } else {
+    blocks = (await runQuery(this.client, queryLatestBlock, {})).block
+  }
+
+  const block = blocks[0]
+  if (!block) return undefined
+  return { ...block, hash: byteaToHex(block.hash) }
 }

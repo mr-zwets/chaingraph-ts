@@ -15,7 +15,8 @@ import {
   getRawTransaction,
   getUtxosForAddress,
   getUtxosForLockingBytecode,
-  sendRawTransaction
+  sendRawTransaction,
+  type UtxoQueryOptions
 } from './chaingraphHelpers.js';
 import { ChaingraphNodeResolutionError } from './errors.js';
 import { queryChaingraphNodes } from './queries.js';
@@ -102,12 +103,12 @@ export class ChaingraphClient {
    * Returns undefined when the instance does not expose its nodes, so callers can fall back to
    * unfiltered queries. Throws when the instance indexes several networks and none was picked.
    */
-  async resolveNode(): Promise<ChaingraphNode | undefined> {
+  async resolveNode() {
     this.resolvedNode ??= this.lookUpNode();
     return await this.resolvedNode;
   }
 
-  private async lookUpNode(): Promise<ChaingraphNode | undefined> {
+  private async lookUpNode() {
     const { network, nodeName } = this.options;
 
     let nodes: { name: string; internal_id: number }[];
@@ -161,21 +162,21 @@ export class ChaingraphClient {
     return await sendRawTransaction.call(this, rawTransactionHex)
   }
 
+  /** Returns undefined when the instance has never seen the transaction. */
   async getRawTransaction(txid: string) {
-    const { encoded_hex } = await getRawTransaction.call(this, txid);
-    return encoded_hex
+    return await getRawTransaction.call(this, txid);
   }
 
-  async getBlockHeight(){
-    const { height } = await getLatestBlockheight.call(this);
-    return Number(height);
+  async getBlockHeight() {
+    const block = await getLatestBlockheight.call(this);
+    return block ? Number(block.height) : undefined;
   }
 
-  async getUtxosForAddress(address: string){
-    return await getUtxosForAddress.call(this, address)
+  async getUtxosForAddress(address: string, options?: UtxoQueryOptions){
+    return await getUtxosForAddress.call(this, address, options)
   }
 
-  async getUtxosForLockingBytecode(lockingBytecode: string){
-    return await getUtxosForLockingBytecode.call(this, lockingBytecode)
+  async getUtxosForLockingBytecode(lockingBytecode: string, options?: UtxoQueryOptions){
+    return await getUtxosForLockingBytecode.call(this, lockingBytecode, options)
   }
 }
